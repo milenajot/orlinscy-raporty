@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orlińscy — Dane tygodniowe</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+  :root{--ink:#1a1a18;--ink2:#4a4a46;--ink3:#9a9a94;--paper:#f7f6f2;--paper3:#e0deda;--accent:#2a5f4a;--ok:#1d9e75;--warn:#d85a30;--line:rgba(26,26,24,0.1);--r:10px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;}
+  header{background:var(--ink);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'DM Serif Display',serif;font-size:20px;color:#f7f6f2;letter-spacing:-0.02em;}
+  .logo em{color:#d4824a;font-style:normal;}
+  .header-sub{font-size:11px;color:rgba(247,246,242,0.4);margin-top:2px;}
+  .container{max-width:640px;margin:0 auto;padding:28px 16px 80px;}
+  .step-label{font-size:10px;font-weight:500;letter-spacing:0.09em;text-transform:uppercase;color:var(--ink3);display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:24px;}
+  .step-label::after{content:'';flex:1;height:0.5px;background:var(--line);}
+  .card{background:white;border-radius:var(--r);border:0.5px solid var(--line);padding:18px 20px;}
+  .field{margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+  label{display:block;font-size:12px;font-weight:500;color:var(--ink2);margin-bottom:4px;}
+  .hint{font-size:11px;color:var(--ink3);margin-top:3px;}
+  input,select{width:100%;padding:9px 12px;border:0.5px solid var(--paper3);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--paper);outline:none;transition:border-color 0.15s;appearance:none;}
+  input:focus,select:focus{border-color:var(--accent);background:white;}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9a94'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 14px;}
+  @media(max-width:480px){.grid2{grid-template-columns:1fr;}.grid3{grid-template-columns:1fr 1fr;}}
+  .calc-box{background:var(--paper);border-radius:8px;padding:14px 16px;margin-top:14px;border-top:0.5px solid var(--line);}
+  .calc-title{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink3);margin-bottom:10px;}
+  .calc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .calc-label{font-size:10px;color:var(--ink3);margin-bottom:2px;}
+  .calc-val{font-size:16px;font-weight:500;color:var(--accent);}
+  .pct-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .pct-total{font-size:12px;color:var(--ink3);margin-top:6px;text-align:right;}
+  .pct-total.ok{color:var(--ok);font-weight:500;}
+  .pct-total.warn{color:var(--warn);font-weight:500;}
+  .btn{width:100%;padding:14px;background:var(--ink);color:var(--paper);border:none;border-radius:var(--r);font-family:'DM Serif Display',serif;font-size:17px;cursor:pointer;margin-top:20px;letter-spacing:-0.01em;transition:background 0.15s,transform 0.1s;}
+  .btn:hover{background:var(--accent);}
+  .btn:active{transform:scale(0.99);}
+  .btn:disabled{background:var(--ink3);cursor:not-allowed;}
+  .status{display:none;margin-top:16px;padding:18px 20px;border-radius:var(--r);font-size:13px;line-height:1.6;}
+  .status.ok{background:#e8f4ee;color:#0f6e56;display:block;}
+  .status.err{background:#fdf0ea;color:#993c1d;display:block;}
+  .status strong{font-weight:500;display:block;margin-bottom:8px;font-size:14px;}
+  .status .actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+  .btn-pdf{padding:10px 20px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;}
+  .btn-pdf:hover{background:#1d9e75;}
+  .note{font-size:11px;color:var(--ink3);text-align:center;margin-top:12px;line-height:1.6;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo">Orliń<em>scy</em></div>
+    <div class="header-sub">Dane tygodniowe — formularz dla liderów</div>
+  </div>
+</header>
+<div class="container">
+
+  <div class="step-label">1 — salon i tydzień</div>
+  <div class="card">
+    <div class="grid2">
+      <div class="field">
+        <label>Salon</label>
+        <select id="salon">
+          <option value="">— wybierz salon —</option>
+          <option>Babice Nowe</option>
+          <option>Bemowo</option>
+          <option>Gocław</option>
+          <option>Kabaty</option>
+          <option>Piastów</option>
+          <option>Sochaczew</option>
+          <option>Wola Park</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Data (dowolny dzień tygodnia)</label>
+        <input type="date" id="data" onchange="updateTydzien()">
+        <div class="hint" id="tydzien-info">Wybierz datę</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-label">2 — sprzedaż i ruch</div>
+  <div class="card">
+    <div class="grid2">
+      <div class="field"><label>Sprzedaż tygodniowa (PLN)</label><input type="number" id="sprzedaz" placeholder="np. 28500" min="0" step="0.01" oninput="recalc()"></div>
+      <div class="field"><label>Średnia wartość koszyka (PLN)</label><input type="number" id="koszyk" placeholder="np. 1850" min="0" step="0.01"></div>
+      <div class="field"><label>Liczba wejść</label><input type="number" id="wejscia" placeholder="np. 320" min="0" oninput="recalc()"></div>
+      <div class="field"><label>Liczba badań</label><input type="number" id="badania" placeholder="np. 12" min="0" oninput="recalc()"></div>
+      <div class="field"><label>Sprzedaż okularów korekcyjnych (szt.)</label><input type="number" id="okulary" placeholder="np. 10" min="0" oninput="recalc()"></div>
+      <div class="field"><label>Sprzedaż wszystkie kategorie (szt.)</label><input type="number" id="wszystkie" placeholder="np. 45" min="0" oninput="recalc()"></div>
+    </div>
+    <div class="calc-box">
+      <div class="calc-title">Wyliczone automatycznie</div>
+      <div class="calc-grid">
+        <div><div class="calc-label">Konwersja sprzedaży / wejścia</div><div class="calc-val" id="c1">—</div></div>
+        <div><div class="calc-label">Konwersja okularów / wejścia</div><div class="calc-val" id="c2">—</div></div>
+        <div><div class="calc-label">Konwersja okularów / badania</div><div class="calc-val" id="c3">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-label">3 — produkty soczewkowe</div>
+  <div class="card">
+    <div class="grid3">
+      <div class="field"><label>XR (szt.)</label><input type="number" id="xr" placeholder="0" min="0"></div>
+      <div class="field"><label>Transitions (szt.)</label><input type="number" id="transitions" placeholder="0" min="0"></div>
+      <div class="field"><label>Eyezen (szt.)</label><input type="number" id="eyezen" placeholder="0" min="0"></div>
+    </div>
+  </div>
+
+  <div class="step-label">4 — typy zamówień</div>
+  <div class="card">
+    <div class="hint" style="margin-bottom:12px;font-size:12px;color:var(--ink2);">Wpisz procenty — muszą sumować się do 100%.</div>
+    <div class="pct-row">
+      <div class="field"><label>Pojedyncze (%)</label><input type="number" id="pojedyncze" placeholder="np. 68" min="0" max="100" step="0.1" oninput="recalcPct()"></div>
+      <div class="field"><label>Podwójne (%)</label><input type="number" id="podwojne" placeholder="np. 27" min="0" max="100" step="0.1" oninput="recalcPct()"></div>
+      <div class="field"><label>Potrójne (%)</label><input type="number" id="potrojne" placeholder="np. 5" min="0" max="100" step="0.1" oninput="recalcPct()"></div>
+    </div>
+    <div class="pct-total" id="pct-sum"></div>
+  </div>
+
+  <div class="step-label">5 — cel miesięczny (opcjonalnie)</div>
+  <div class="card">
+    <div class="field">
+      <label>Cel sprzedaży w tym miesiącu (PLN)</label>
+      <input type="number" id="cel" placeholder="np. 102000" min="0">
+      <div class="hint">Możesz zostawić puste</div>
+    </div>
+  </div>
+
+  <button class="btn" id="btn-send" onclick="wyslij()">Zapisz dane i pobierz raport PDF</button>
+  <p class="note">Dane zostaną zapisane do Google Sheets Orlińscy.</p>
+  <div class="status" id="status"></div>
+
+</div>
+
+<script>
+  const WEBHOOK_URL = "https://n8n.srv1026498.hstgr.cloud/webhook/fdf74d72-aa08-40af-8d80-8fbb84d2d8d9";
+
+  document.getElementById('data').value = new Date().toISOString().split('T')[0];
+  updateTydzien();
+
+  function getWeekNumber(d) {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  }
+
+  function getMondayOfWeek(d) {
+    const date = new Date(d);
+    const day = date.getDay() || 7;
+    date.setDate(date.getDate() - day + 1);
+    return date;
+  }
+
+  function updateTydzien() {
+    const val = document.getElementById('data').value;
+    if (!val) return;
+    const d = new Date(val + 'T12:00:00');
+    const nr = getWeekNumber(d);
+    const pon = getMondayOfWeek(d);
+    const nd = new Date(pon); nd.setDate(nd.getDate() + 6);
+    const fmt = x => x.toLocaleDateString('pl-PL', {day:'numeric', month:'short'});
+    document.getElementById('tydzien-info').textContent = 'Tydzien ' + nr + ' (' + fmt(pon) + ' - ' + fmt(nd) + ')';
+  }
+
+  function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+  function recalc() {
+    const wej = v('wejscia'), bad = v('badania'), ok = v('okulary'), ws = v('wszystkie');
+    document.getElementById('c1').textContent = wej ? (ws/wej*100).toFixed(1)+'%' : '—';
+    document.getElementById('c2').textContent = wej ? (ok/wej*100).toFixed(1)+'%' : '—';
+    document.getElementById('c3').textContent = bad ? (ok/bad*100).toFixed(1)+'%' : '—';
+  }
+
+  function recalcPct() {
+    const sum = v('pojedyncze') + v('podwojne') + v('potrojne');
+    const el = document.getElementById('pct-sum');
+    if (!sum) { el.textContent = ''; return; }
+    el.textContent = 'Suma: ' + sum.toFixed(1) + '%';
+    el.className = 'pct-total ' + (Math.abs(sum - 100) < 0.5 ? 'ok' : 'warn');
+  }
+
+  function showStatus(msg, isOk, extra) {
+    const el = document.getElementById('status');
+    el.className = 'status ' + (isOk ? 'ok' : 'err');
+    el.innerHTML = msg + (extra || '');
+    el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function generujPDF(dane) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210, M = 14;
+    const INK = [26,26,24], GRAY = [154,154,148], PAPER = [247,246,242];
+    const ACC = [42,95,74], OK = [29,158,117], WARN = [216,90,48];
+    const BLUE = [55,138,221], TEAL = [29,158,117], CORAL = [216,90,48];
+
+    const sf = (bold, size, color) => {
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setFontSize(size);
+      doc.setTextColor(...(color || INK));
+    };
+    const hline = (y) => {
+      doc.setDrawColor(224,222,218);
+      doc.setLineWidth(0.2);
+      doc.line(M, y, W-M, y);
+    };
+    const rect = (x, y, w, h, col) => {
+      doc.setFillColor(...col);
+      doc.rect(x, y, w, h, 'F');
+    };
+
+    // HEADER
+    rect(0, 0, W, 22, INK);
+    sf(true, 14, PAPER); doc.text(dane.salon, M, 12);
+    sf(false, 8, [120,120,118]);
+    doc.text('Raport tygodniowy  |  Tydzien ' + dane.nr_tygodnia + ' / ' + dane.rok + '  |  ' + dane.data, M, 18);
+    doc.text('Wygenerowano: ' + new Date().toLocaleDateString('pl-PL'), W-M, 12, {align:'right'});
+
+    let y = 30;
+
+    // WYNIKI TYGODNIA
+    sf(true, 9.5, INK); doc.text('Wyniki tygodnia', M, y); y += 3; hline(y); y += 5;
+
+    const bw = (W - M*2 - 10) / 3;
+    const metrics = [
+      {lbl:'Sprzedaz tygodniowa', val: dane.sprzedaz ? dane.sprzedaz.toLocaleString('pl-PL')+' PLN' : '—'},
+      {lbl:'Liczba wejsc', val: String(dane.wejscia || '—')},
+      {lbl:'Liczba badan', val: String(dane.badania || '—')},
+      {lbl:'Sr. koszyk', val: dane.koszyk ? dane.koszyk.toLocaleString('pl-PL')+' PLN' : '—'},
+      {lbl:'Sprzedaz okularow', val: (dane.okulary||0)+' szt.'},
+      {lbl:'Sprzedaz wszystkie', val: (dane.wszystkie||0)+' szt.'},
+    ];
+
+    for (let i = 0; i < metrics.length; i++) {
+      const col = i % 3, row = Math.floor(i / 3);
+      const bx = M + col*(bw+5), by = y + row*22;
+      rect(bx, by, bw, 18, PAPER);
+      sf(false, 7.5, GRAY); doc.text(metrics[i].lbl, bx+4, by+7);
+      sf(true, 10, INK); doc.text(String(metrics[i].val), bx+4, by+15);
+    }
+    y += Math.ceil(metrics.length/3)*22 + 6;
+
+    // KONWERSJE
+    hline(y); y += 5;
+    sf(true, 9.5, INK); doc.text('Konwersje', M, y); y += 5;
+
+    const konw = [
+      {l:'Konwersja sprzedazy / wejscia', v: dane.konw1},
+      {l:'Konwersja okularow / wejscia', v: dane.konw2},
+      {l:'Konwersja okularow / badania', v: dane.konw3},
+    ];
+    const BW = W - M*2 - 90;
+
+    konw.forEach((k, i) => {
+      if (i%2===1) { rect(M-1, y-3, W-M*2+2, 9, PAPER); }
+      sf(false, 8.5, INK); doc.text(k.l, M, y+2);
+      const pct = k.v || 0;
+      const col = pct >= 10 ? OK : pct > 0 ? WARN : GRAY;
+      sf(true, 8.5, col); doc.text(pct.toFixed(1)+'%', M+75, y+2);
+      rect(M+88, y-1, BW, 5, [224,222,218]);
+      if (pct > 0) { rect(M+88, y-1, Math.min(BW*pct/100, BW), 5, col); }
+      y += 9;
+    });
+    y += 4;
+
+    // SOCZEWKI
+    hline(y); y += 5;
+    sf(true, 9.5, INK); doc.text('Produkty soczewkowe', M, y); y += 5;
+    const sw = (W-M*2-16)/3;
+    [[`XR: ${dane.xr||0}`, BLUE],[`Transitions: ${dane.transitions||0}`, [212,130,74]],[`Eyezen: ${dane.eyezen||0}`, [74,127,181]]].forEach((s,i) => {
+      rect(M+i*(sw+8), y, sw, 14, PAPER);
+      sf(true, 10, s[1]); doc.text(s[0]+' szt.', M+i*(sw+8)+5, y+9);
+    });
+    y += 18;
+
+    // TYPY ZAMOWIEN
+    if (dane.pojedyncze || dane.podwojne || dane.potrojne) {
+      hline(y); y += 5;
+      sf(true, 9.5, INK); doc.text('Typy zamowien', M, y); y += 5;
+      [[`Pojedyncze: ${(dane.pojedyncze||0).toFixed(1)}%`, dane.pojedyncze||0, BLUE],
+       [`Podwojne: ${(dane.podwojne||0).toFixed(1)}%`, dane.podwojne||0, TEAL],
+       [`Potrojne: ${(dane.potrojne||0).toFixed(1)}%`, dane.potrojne||0, CORAL]
+      ].forEach((t, i) => {
+        rect(M+i*(sw+8), y, sw, 14, PAPER);
+        sf(true, 10, t[2]); doc.text(t[0], M+i*(sw+8)+5, y+9);
+      });
+      y += 18;
+    }
+
+    // CEL MIESIĘCZNY
+    if (dane.cel) {
+      hline(y); y += 5;
+      sf(true, 9.5, INK); doc.text('Cel miesięczny', M, y); y += 5;
+      rect(M, y, W-M*2, 14, PAPER);
+      sf(false, 8.5, GRAY); doc.text('Cel:', M+5, y+9);
+      sf(true, 10, ACC); doc.text(dane.cel.toLocaleString('pl-PL')+' PLN', M+25, y+9);
+      y += 18;
+    }
+
+    // FOOTER
+    hline(267, GRAY);
+    sf(false, 7, GRAY);
+    doc.text('Orlinscy — raport tygodniowy  |  dane do analizy wklej do Claude', W/2, 272, {align:'center'});
+
+    return doc;
+  }
+
+  async function wyslij() {
+    const salon = document.getElementById('salon').value;
+    const data = document.getElementById('data').value;
+    if (!salon) { showStatus('<strong>Wybierz salon.</strong>', false); return; }
+    if (!data) { showStatus('<strong>Wybierz datę.</strong>', false); return; }
+    if (!v('sprzedaz')) { showStatus('<strong>Wpisz sprzedaż tygodniową.</strong>', false); return; }
+    const pct = v('pojedyncze') + v('podwojne') + v('potrojne');
+    if (pct > 0 && Math.abs(pct - 100) > 1) {
+      showStatus('<strong>Typy zamówień nie sumują się do 100%.</strong>', false); return;
+    }
+
+    const btn = document.getElementById('btn-send');
+    btn.disabled = true; btn.textContent = 'Zapisywanie...';
+
+    const d = new Date(data + 'T12:00:00');
+    const nr = getWeekNumber(d);
+    const wejscia = v('wejscia'), badania = v('badania'), okulary = v('okulary'), wszystkie = v('wszystkie');
+
+    const dane = {
+      salon, data, rok: d.getFullYear(), nr_tygodnia: nr,
+      sprzedaz: v('sprzedaz'), koszyk: v('koszyk'),
+      wejscia, badania, okulary, wszystkie,
+      konw1: wejscia ? parseFloat((wszystkie/wejscia*100).toFixed(2)) : 0,
+      konw2: wejscia ? parseFloat((okulary/wejscia*100).toFixed(2)) : 0,
+      konw3: badania ? parseFloat((okulary/badania*100).toFixed(2)) : 0,
+      xr: parseInt(document.getElementById('xr').value) || 0,
+      transitions: parseInt(document.getElementById('transitions').value) || 0,
+      eyezen: parseInt(document.getElementById('eyezen').value) || 0,
+      cel: v('cel'),
+      pojedyncze: v('pojedyncze'), podwojne: v('podwojne'), potrojne: v('potrojne'),
+    };
+
+    // Wyślij do n8n
+    let zapisOk = false;
+    try {
+      const res = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(dane),
+      });
+      zapisOk = res.ok;
+    } catch(e) { console.warn('n8n:', e.message); }
+
+    // Generuj PDF
+    try {
+      const doc = generujPDF(dane);
+      const fileName = 'Raport_' + salon.replace(/ /g,'_') + '_T' + nr + '_' + d.getFullYear() + '.pdf';
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
+
+      showStatus(
+        '<strong>Dane zapisane! Raport PDF pobrany.</strong>' +
+        'Salon: ' + salon + ' — Tydzień ' + nr + ' / ' + d.getFullYear() +
+        (zapisOk ? '' : '<br><small>Uwaga: sprawdź czy dane trafiły do Google Sheets.</small>'),
+        true,
+        '<div class="actions"><a href="'+url+'" download="'+fileName+'"><button class="btn-pdf">Pobierz PDF ponownie</button></a></div>'
+      );
+    } catch(err) {
+      showStatus('<strong>Błąd generowania PDF.</strong><br>' + err.message, false);
+    }
+
+    btn.textContent = 'Zapisz dane i pobierz raport PDF';
+    btn.disabled = false;
+  }
+</script>
+</body>
+</html>
